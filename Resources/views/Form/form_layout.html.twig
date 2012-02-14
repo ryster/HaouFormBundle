@@ -1,0 +1,210 @@
+{% extends "form_div_layout.html.twig" %}
+
+{# Widgets #}
+
+{% block widget_attributes %}
+{% spaceless %}
+    id="{{ id }}" name="{{ full_name }}"{% if read_only %} disabled="disabled"{% endif %}{% if required %} required="required"{% endif %}{% if max_length %} maxlength="{{ max_length }}"{% endif %}{% if pattern %} pattern="{{ pattern }}"{% endif %}
+    {% if is_freeze(form) == false %}{% for attrname,attrvalue in attr %}{{attrname}}="{{attrvalue}}" {% endfor %}{% endif %}
+{% endspaceless %}
+{% endblock widget_attributes %}
+
+{% block field_widget %}
+{% spaceless %}
+    {% set _emptyValue = _emptyValue|default('') %}
+    {% set type = type|default('text') %}
+
+    {% if type != "hidden" and is_freeze(form) %}
+        {% if _get_form_type(form) == 'password' %}
+            <span class="confirmation">
+                {% if _get_password(form) %}
+                   {{ _get_password(form) }}
+                {% elseif _emptyValue %}
+                    <span style="color:#f00;">{{ _emptyValue }}</span>
+                {% endif %}
+            </span>
+            <input type="hidden" {{ block('widget_attributes') }} value="{{ _get_password(form) }}" />
+        {% else %}
+            <span class="confirmation">
+                {% if value %}
+                    {{ value }}
+                {% elseif _emptyValue %}
+                    <span style="color:#f00;">{{ _emptyValue }}</span>
+                {% endif %}
+            </span>
+            <input type="hidden" {{ block('widget_attributes') }} {% if value is not empty %}value="{{ value }}" {% endif %}/>
+        {% endif %}
+    {% else %}
+        <input type="{{ type }}" {{ block('widget_attributes') }} {% if value is not empty %}value="{{ value }}" {% endif %}/>
+    {% endif %}
+    
+    {% if explain and is_freeze(form) == false %}
+        <p class="haou_form_explain">{{ explain|trans }}</p>
+    {% endif %}
+{% endspaceless %}
+{% endblock field_widget %}
+
+
+{% block textarea_widget %}
+{% spaceless %}
+    {% if is_freeze(form) %}
+        <span class="confirmation">{{ value|replace({ "\r\n": "\n" })|replace({ "\r": "\n" })|replace({ "\n": "<br />\n" })|raw }}</span>
+    {% else %}
+        <textarea {{ block('widget_attributes') }}>{{ value }}</textarea>
+    {% endif %}
+
+    {% if explain and is_freeze(form) == false %}
+        <p class="haou_form_explain">{{ explain|trans }}</p>
+    {% endif %}
+{% endspaceless %}
+{% endblock textarea_widget %}
+
+
+{% block checkbox_widget %}
+{% spaceless %}
+    {% if is_freeze(form) %}
+        {% if checked %}
+            <span class="confirmation"">{{ label }}</span>&nbsp;
+            <input type="hidden" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %} />
+        {% endif %}
+    {% else %}
+        <input type="checkbox" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %} />
+    {% endif %}
+
+    {% if (_explain is not defined or _explain == false) and (explain and is_freeze(form) == false) %}
+        <p class="haou_form_explain">{{ explain|trans }}</p>
+    {% endif %}
+{% endspaceless %}
+{% endblock checkbox_widget %}
+
+
+{% block radio_widget %}
+{% spaceless %}
+    {% if is_freeze(form) %}
+        {% if checked %}
+            <span class="confirmation">{{ label }}</span>
+            <input type="hidden" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %} />
+        {% endif %}
+    {% else %}
+        <input type="radio" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %} />
+    {% endif %}
+{% endspaceless %}
+{% endblock radio_widget %}
+
+{##}
+{% block choice_widget %}
+{% spaceless %}
+    {% if expanded %}
+        <div {{ block('widget_container_attributes') }}>
+        {% for child in form %}
+            {% set noneLabel = is_freeze(form) %}
+            {{ form_widget(child, { '_expanded': true }) }}
+            {{ form_label(child, null, { '_noneLabel': is_freeze(child) }) }}
+        {% endfor %}
+        </div>
+    {% else %}
+        {% if is_freeze(form) %}
+            {% if value is not empty %}
+                {% for val in value %}
+                    {% if _noneParagraph is defined and _noneParagraph %}
+                        {{ choices[val]|trans }}
+                    {% else %}
+                        <p class="confirmation">{{ choices[val] }}</p>
+                    {% endif %}
+                    <input type="hidden" value="{{ val }}" {{ block('widget_attributes') }} />
+                {% else %}
+                    {% if _noneParagraph is defined and _noneParagraph %}
+                        {{ choices[value]|trans }}
+                    {% else %}
+                        <p class="confirmation">{{ choices[value]|trans }}</p>
+                    {% endif %}
+                    <input type="hidden" value="{{ value }}" {{ block('widget_attributes') }} />
+                {% endfor %}
+            {% endif %}
+        {% else %}
+            <select {{ block('widget_attributes') }}{% if multiple %} multiple="multiple"{% endif %}>
+                {% if empty_value is not none %}
+                    <option value="">{{ empty_value|trans }}</option>
+                {% endif %}
+                {% if preferred_choices|length > 0 %}
+                    {% set options = preferred_choices %}
+                    {{ block('widget_choice_options') }}
+                    {% if choices|length > 0 and separator is not none %}
+                        <option disabled="disabled">{{ separator }}</option>
+                    {% endif %}
+                {% endif %}
+                {% set options = choices %}
+                {{ block('widget_choice_options') }}
+            </select>
+        {% endif %}
+    {% endif %}
+
+    {% if explain and is_freeze(form) == false %}
+        <p class="haou_form_explain">{{ explain|trans }}</p>
+    {% endif %}
+{% endspaceless %}
+{% endblock choice_widget %}
+
+{% block datetime_widget %}
+{% spaceless %}
+    {% if widget == 'single_text' %}
+        {{ block('field_widget') }}
+    {% else %}
+        {{ form_errors(form.date) }}
+        {{ form_errors(form.time) }}
+        <p class="confirmation">
+            {{ form_widget(form.date, { '_noneParagraph': true }) }}
+            &nbsp;
+            {{ form_widget(form.time, { '_noneParagraph': true }) }}
+        </p>
+    {% endif %}
+{% endspaceless %}
+{% endblock datetime_widget %}
+
+{% block date_widget %}
+{% spaceless %}
+    {% if widget == 'single_text' %}
+        {{ block('field_widget') }}
+    {% else %}
+        {% if _noneParagraph is not defined or _noneParagraph == false %}
+            <p class="confirmation">
+        {% endif %}
+        {{ date_pattern|replace({
+            '{{ year }}':  form_widget(form.year, { '_noneParagraph': true }),
+            '{{ month }}': form_widget(form.month, { '_noneParagraph': true }),
+            '{{ day }}':   form_widget(form.day, { '_noneParagraph': true }),
+        })|raw }}
+        {% if _noneParagraph is not defined or _noneParagraph == false %}
+            </p>
+        {% endif %}
+    {% endif %}
+{% endspaceless %}
+{% endblock date_widget %}
+
+{% block time_widget %}
+{% spaceless %}
+    {% if widget == 'single_text' %}
+        {{ block('field_widget') }}
+    {% else %}
+        {% if _noneParagraph is not defined or _noneParagraph == false %}
+            <p class="confirmation">
+        {% endif %}
+            {{ form_widget(form.hour, { 'attr': { 'size': '1' }, '_noneParagraph': true }) }}:{{ form_widget(form.minute, { 'attr': { 'size': '1' }, '_noneParagraph': true }) }}{% if with_seconds %}:{{ form_widget(form.second, { 'attr': { 'size': '1' }, '_noneParagraph': true }) }}{% endif %}
+        {% if _noneParagraph is not defined or _noneParagraph == false %}
+            </p>
+        {% endif %}
+    {% endif %}
+{% endspaceless %}
+{% endblock time_widget %}
+
+
+{# Labels #}
+
+{% block field_label %}
+{% spaceless %}
+    {% if _noneLabel is not defined or _noneLabel == false %}
+        {% set attr = attr|merge({'for': id}) %}
+        {{ block('generic_label') }}
+    {% endif %}
+{% endspaceless %}
+{% endblock field_label %}

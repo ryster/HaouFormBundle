@@ -1,0 +1,15 @@
+services:
+    haou.form.type_extension.freeze:
+        class: Haou\FormBundle\Form\Extension\FreezeTypeExtension
+        tags:
+            - { name: form.type_extension, alias: field }
+
+    haou.form.type_extension.explain:
+        class: Haou\FormBundle\Form\Extension\ExplainTypeExtension
+        tags:
+            - { name: form.type_extension, alias: field }
+
+    haou.twig.extension.form:
+        class: Haou\FormBundle\Twig\Extension\FormExtension
+        tags:
+            - { name: twig.extension }
